@@ -38,7 +38,7 @@ int main(int argc, char* args[]){
         cout << "Error: Creating Socket \n";
 		return -1;
 	}
-    char buffer[BUFFER]; 
+    char buffer[BUFFER + 1]; 
 
     error = sendto(sc, args[3], strlen(args[3]) + 1, 0, res->ai_addr, res->ai_addrlen);	
     if(error == -1){

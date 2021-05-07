@@ -23,7 +23,7 @@ int main(int argc, char* args[]){
 
     memset((void*) &hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_socktype = SOCK_STREAM;
 
 	error = getaddrinfo(args[1], args[2], &hints, &res);
 	if(error != 0){
@@ -38,51 +38,37 @@ int main(int argc, char* args[]){
 		return -1;
 	}
     bind(sc, res->ai_addr, res->ai_addrlen);
+    //-------------TCP Management-------------------
+    listen(sc, 16);
+
+    struct sockaddr client;
+    socklen_t clientSize = sizeof(struct sockaddr);
+
+    int clientSd = accept(sc,&client, &clientSize);
+
+    char host[NI_MAXHOST];
+    char serv[NI_MAXSERV];
+
+    getnameinfo(&client, clientSize, host, NI_MAXHOST, serv,NI_MAXSERV, NI_NUMERICHOST);
+    cout << "Conection from " << host << " " << serv << "\n";
     //-------------Loop-----------------------------
-    char input =' ';
-    while(input != 'q'){
-        char buffer[BUFFER]; 
+    while(true){
+        char buffer[BUFFER + 1]; 
 
-        struct sockaddr client;
-        socklen_t clientSize = sizeof(struct sockaddr);
-
-		char host[NI_MAXHOST];
-		char serv[NI_MAXSERV];
         //Recieve data from the client
-        int bytes = recvfrom(sc, (void *) buffer, BUFFER,0, &client, &clientSize);
+        int bytes = recv(clientSd, (void *) buffer, BUFFER,0);
+
 		buffer[bytes] ='\0';//Last byte recieve
-        if(bytes == -1){
+
+        if( bytes == -1 ){
             cout << "Error: While Reciving from Client \n";
 		    return -1;
         }
-        getnameinfo(&client, clientSize, host, NI_MAXHOST, serv,NI_MAXSERV, NI_NUMERICHOST);
-        cout << bytes << "bytes de " << host << ":" << serv << "\n";
-		
-		//If the client send something
-		if(bytes >= 0){
-			input = buffer[0];
-			//Time
-        	char timeBuffer[BUFFER + 1]; 	
-
-			time_t t = time(NULL);
-			struct tm* time = localtime(&t);
-
-        	int timeSize = 0;
-			//Procces the data
-			if('t' == input)
-				timeSize = strftime(timeBuffer, BUFFER, "%r", time);
-			else if('d' == input)
-				timeSize = strftime(timeBuffer, BUFFER, "%D", time);
-			else if('q' == input)
-            	cout << "Closing... \n";
-			else 
-            	cout << "Command not supported \n";
-
-			if(timeSize > 0){
-				sendto(sc,timeBuffer,timeSize,0, &client, clientSize);
-			}
-		}
-		else cout << "Command not supported \n";
+        if( bytes == 0){
+            cout << "End of conection \n";
+            return 0;
+        }
+        send(clientSd,buffer,bytes,0);
     }
 	close(sc);
 	freeaddrinfo(res);
