@@ -50,6 +50,7 @@ int main(int argc, char* args[]){
 		char serv[NI_MAXSERV];
         //Recieve data from the client
         int bytes = recvfrom(sc, (void *) buffer, BUFFER,0, &client, &clientSize);
+		buffer[bytes] ='\0';//Last byte recieve
         if(bytes == -1){
             cout << "Error: While Reciving from Client \n";
 		    return -1;
@@ -58,7 +59,7 @@ int main(int argc, char* args[]){
         cout << bytes << "bytes de " << host << ":" << serv << "\n";
 		
 		//If the client send something
-		if(bytes == 0){
+		if(bytes >= 0){
 			input = buffer[0];
 			//Time
         	char timeBuffer[BUFFER]; 	
@@ -78,7 +79,7 @@ int main(int argc, char* args[]){
             	cout << "Command not supported \n";
 
 			if(timeSize > 0){
-				sendto(sc,timeBuffer,timeSize,0, &client, clientSize);	
+				sendto(sc,timeBuffer,timeSize,0, &client, clientSize);
 			}
 		}
 		else cout << "Command not supported \n";
