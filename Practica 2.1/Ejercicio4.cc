@@ -64,9 +64,9 @@ int main(int argc, char* args[]){
             cout << "Error: While Reciving from Client \n";
 		    return -1;
         }
-        if( bytes == 0){
+        if( bytes == 0 || buffer[0] == 'Q'){
             cout << "End of conection \n";
-            return 0;
+            break;
         }
         send(clientSd,buffer,bytes,0);
     }
