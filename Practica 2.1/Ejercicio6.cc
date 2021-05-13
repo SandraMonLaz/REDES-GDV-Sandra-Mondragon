@@ -35,7 +35,8 @@ public:
                 return -1;
             }
             getnameinfo(&client, clientSize, host, NI_MAXHOST, serv,NI_MAXSERV, NI_NUMERICHOST);
-            cout << bytes << "bytes de " << host << ":" << serv << "\n";
+            cout << bytes << "bytes de " << host << ":" << serv << "Id Thread: " << std::this_thread::get_id() <<"\n";
+            sleep(5);
             
             //If the client send something
             if(bytes >= 0){
@@ -69,7 +70,7 @@ private:
     int sc;
 };
 /*
- * args[0] -> P2.1_Ejericio1
+ * args[0] -> Ejercicio6
  * args[1] -> host
  * args[2] -> port
  * */
@@ -105,9 +106,9 @@ int main(int argc, char* args[]){
         //Make the thread with lambda function
         ThreadMessageUDP *ms = new ThreadMessageUDP(sc);
         pool[i] = thread([&ms](){
-            ms->message();
+           ms->message();
             delete ms;
-        }).detach();
+        });
     }
     for(int i = 0; i< MAX_THREADS; i++){
         pool[i].join();

@@ -12,34 +12,34 @@ using namespace std;
 
 class ThreadMessageTCP {
 public:
-    ThreadMessageTCP(int socket): sc(socket){}
+    ThreadMessageTCP(int client): clientSd(client){}
     ~ThreadMessageTCP(){}
 
     char message(){
-            while(true){
-        char buffer[BUFFER + 1]; 
+        while(true){
+            char buffer[BUFFER + 1]; 
 
-        //Recieve data from the client
-        int bytes = recv(clientSd, (void *) buffer, BUFFER,0);
+            //Recieve data from the client
+            int bytes = recv(clientSd, (void *) buffer, BUFFER,0);
 
-		buffer[bytes] ='\0';//Last byte recieve
+            buffer[bytes] ='\0';//Last byte recieve
 
-        if( bytes == -1 ){
-            cout << "Error: While Reciving from Client \n";
-		    return -1;
+            if( bytes == -1 ){
+                cout << "Error: While Reciving from Client \n";
+                return -1;
+            }
+            if( bytes == 0 || buffer[0] == 'Q'){
+                cout << "End of conection \n";
+                break;
+            }
+            send(clientSd,buffer,bytes,0);
         }
-        if( bytes == 0 || buffer[0] == 'Q'){
-            cout << "End of conection \n";
-            break;
-        }
-        send(clientSd,buffer,bytes,0);
-    }
     }
 private:
-    int sc;
+    int clientSd;
 };
 /*
- * args[0] -> P2.1_Ejericio1
+ * args[0] -> Ejercicio7
  * args[1] -> host
  * args[2] -> port
  * */

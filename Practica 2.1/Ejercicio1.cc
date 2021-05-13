@@ -8,7 +8,7 @@
 
 using namespace std;
 /*
- * args[0] -> P2.1_Ejericio1
+ * args[0] -> Ejercicio1
  * args[1] -> host
  * */
 int main(int argc, char* args[]){

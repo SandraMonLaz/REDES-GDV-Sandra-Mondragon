@@ -10,7 +10,7 @@
 using namespace std;
 
 /*
- * args[0] -> P2.1_Ejericio1
+ * args[0] -> Ejercicio4
  * args[1] -> host
  * args[2] -> port
  * */
