@@ -20,7 +20,6 @@ public:
         char input =' ';
         while(input != 'q'){
             char buffer[BUFFER]; 
-            char input = ' ';
 
             struct sockaddr client;
             socklen_t clientSize = sizeof(struct sockaddr);
@@ -35,7 +34,7 @@ public:
                 return -1;
             }
             getnameinfo(&client, clientSize, host, NI_MAXHOST, serv,NI_MAXSERV, NI_NUMERICHOST);
-            cout << bytes << "bytes de " << host << ":" << serv << "Id Thread: " << std::this_thread::get_id() <<"\n";
+            cout << bytes << " bytes de " << host << ":" << serv << "Id Thread: " << std::this_thread::get_id() <<"\n";
             sleep(5);
             
             //If the client send something
@@ -53,12 +52,13 @@ public:
                     timeSize = strftime(timeBuffer, BUFFER, "%r", time);
                 else if('d' == input)
                     timeSize = strftime(timeBuffer, BUFFER, "%D", time);
-                else if('q' == input)
-                    cout << "Closing... \n";
+                else if('q' == input){
+                    cout << "Closing... \n"; 
+                }
                 else 
                     cout << "Command not supported \n";
 
-                if(timeSize > 0){
+                if(timeSize > 0 ){
                     sendto(sc,timeBuffer,timeSize,0, &client, clientSize);
                 }
             }
@@ -100,19 +100,17 @@ int main(int argc, char* args[]){
     bind(sc, res->ai_addr, res->ai_addrlen);
 	freeaddrinfo(res);
     //-------------Threads-----------------------------
-    thread pool[MAX_THREADS];
-
     for(int i = 0; i< MAX_THREADS ; i++){
         //Make the thread with lambda function
         ThreadMessageUDP *ms = new ThreadMessageUDP(sc);
-        pool[i] = thread([&ms](){
+        thread([&ms](){
            ms->message();
             delete ms;
-        });
+        }).detach();
     }
-    for(int i = 0; i< MAX_THREADS; i++){
-        pool[i].join();
-    }
+    char c[BUFFER];
+    while(c[0] != 'q') cin.getline(c, BUFFER);
+
 	close(sc);
 	return 0;
 }
