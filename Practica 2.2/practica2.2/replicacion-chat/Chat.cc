@@ -1,5 +1,6 @@
 #include "Chat.h"
 
+
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
@@ -10,6 +11,14 @@ void ChatMessage::to_bin()
     memset(_data, 0, MESSAGE_SIZE);
 
     //Serializar los campos type, nick y message en el buffer _data
+    char* tmp = _data;
+    memcpy(tmp, &type, sizeof(uint8_t));
+
+    tmp += sizeof(uint8_t);
+    memcpy(tmp, &nick, 8*sizeof(char));
+
+    tmp += 8*sizeof(char);
+    memcpy(tmp, &message, 80 * sizeof(char));
 }
 
 int ChatMessage::from_bin(char * bobj)
@@ -19,13 +28,43 @@ int ChatMessage::from_bin(char * bobj)
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 
     //Reconstruir la clase usando el buffer _data
+    char* tmp = _data;
+    memcpy(&type, tmp, sizeof(uint8_t));
 
+    tmp += sizeof(uint8_t);
+    memcpy(&nick, tmp, 8*sizeof(char));
+
+    tmp += 8*sizeof(char);
+    memcpy(&message, tmp, 80 * sizeof(char));
     return 0;
 }
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+void ChatServer::addClient(Socket* clientSocket){
+    std::unique_ptr<Socket> loginRequest(clientSocket);
+    clients.emplace_back(std::move(loginRequest));
+}
 
+void ChatServer::removeClient(Socket* clientSocket){
+    std::vector<std::unique_ptr<Socket>>::iterator it = clients.begin();
+
+    while(it != clients.end()){
+        if(*it->get() == *clientSocket) break;
+        it++;
+    } 
+
+    if(it != clients.end()) clients.erase(it);
+}
+
+void ChatServer::broadcastMessage(Socket* clientSocket, ChatMessage* message){
+
+    std::unique_ptr<Socket> client(clientSocket);
+    for(int i = 0; i < clients.size; ++i){
+        if(client != clients[i])   
+            socket.send(*message, *clients[i]);
+    }
+}
 void ChatServer::do_messages()
 {
     while (true)
@@ -35,11 +74,18 @@ void ChatServer::do_messages()
          * crear un unique_ptr con el objeto socket recibido y usar std::move
          * para añadirlo al vector
          */
+        ChatMessage message;
+        Socket* clientSocket;
 
-        //Recibir Mensajes en y en función del tipo de mensaje
-        // - LOGIN: Añadir al vector clients
-        // - LOGOUT: Eliminar del vector clients
-        // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
+        socket.recv(message, clientSocket);
+
+        switch (message.type)
+        {
+            case ChatMessage::LOGIN:    addClient(clientSocket);                    break;
+            case ChatMessage::LOGOUT:   removeClient(clientSocket);                 break;
+            case ChatMessage::MESSAGE:  broadcastMessage(clientSocket, &message);   break;
+            default:                                                                break;
+        }
     }
 }
 
@@ -58,7 +104,12 @@ void ChatClient::login()
 
 void ChatClient::logout()
 {
-    // Completar
+    std::string msg;
+
+    ChatMessage em(nick, msg);
+    em.type = ChatMessage::LOGOUT;
+
+    socket.send(em, socket);
 }
 
 void ChatClient::input_thread()
@@ -67,6 +118,12 @@ void ChatClient::input_thread()
     {
         // Leer stdin con std::getline
         // Enviar al servidor usando socket
+        ChatMessage msg;
+        msg.type = ChatMessage::MESSAGE;
+        msg.nick = nick;
+
+        std::getline(std::cin, msg.message);
+        socket.send(msg,socket);
     }
 }
 
@@ -76,6 +133,10 @@ void ChatClient::net_thread()
     {
         //Recibir Mensajes de red
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
+        ChatMessage msg;
+        socket.recv(msg);
+
+        std::cout << msg.nick << ": " << msg.message << "\n";
     }
 }
 
