@@ -41,7 +41,6 @@ int Socket::recv(Serializable &obj, Socket * &sock)
     char buffer[MAX_MESSAGE_SIZE];
 
     ssize_t bytes = ::recvfrom(sd, buffer, MAX_MESSAGE_SIZE, 0, &sa, &sa_len);
-
     if ( bytes <= 0 )
     {
         return -1;
@@ -53,7 +52,6 @@ int Socket::recv(Serializable &obj, Socket * &sock)
     }
 
     obj.from_bin(buffer);
-
     return 0;
 }
 

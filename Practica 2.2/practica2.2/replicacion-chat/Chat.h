@@ -71,8 +71,8 @@ public:
     void do_messages();
 
 private:
-    void addClient(Socket* clientSocket);
-    void removeClient(Socket* clientSocket);
+    void addClient(Socket* clientSocket, ChatMessage* message);
+    void removeClient(Socket* clientSocket, ChatMessage* message);
     void broadcastMessage(Socket* clientSocket, ChatMessage* message);
     /**
      *  Lista de clientes conectados al servidor de Chat, representados por

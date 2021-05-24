@@ -15,10 +15,10 @@ void ChatMessage::to_bin()
     memcpy(tmp, &type, sizeof(uint8_t));
 
     tmp += sizeof(uint8_t);
-    memcpy(tmp, &nick, 8*sizeof(char));
+    memcpy(tmp, nick.c_str(), 8*sizeof(char));
 
     tmp += 8*sizeof(char);
-    memcpy(tmp, &message, 80 * sizeof(char));
+    memcpy(tmp, message.c_str(), 80 * sizeof(char));
 }
 
 int ChatMessage::from_bin(char * bobj)
@@ -32,21 +32,30 @@ int ChatMessage::from_bin(char * bobj)
     memcpy(&type, tmp, sizeof(uint8_t));
 
     tmp += sizeof(uint8_t);
-    memcpy(&nick, tmp, 8*sizeof(char));
 
+    char bufferNick[8];
+    memcpy(&bufferNick, tmp, 8*sizeof(char));
+    nick = bufferNick;
+    
     tmp += 8*sizeof(char);
-    memcpy(&message, tmp, 80 * sizeof(char));
+
+    char bufferMessage[80];
+    memcpy(&bufferMessage, tmp, 80 * sizeof(char));
+    message = bufferMessage;
+
     return 0;
 }
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChatServer::addClient(Socket* clientSocket){
+void ChatServer::addClient(Socket* clientSocket, ChatMessage* message){
     std::unique_ptr<Socket> loginRequest(clientSocket);
     clients.emplace_back(std::move(loginRequest));
+
+    std::cout << "Join: " << message->nick << "\n";
 }
 
-void ChatServer::removeClient(Socket* clientSocket){
+void ChatServer::removeClient(Socket* clientSocket, ChatMessage* message){
     std::vector<std::unique_ptr<Socket>>::iterator it = clients.begin();
 
     while(it != clients.end()){
@@ -55,14 +64,15 @@ void ChatServer::removeClient(Socket* clientSocket){
     } 
 
     if(it != clients.end()) clients.erase(it);
+
+    std::cout << "Removed: " << message->nick << "\n";
 }
 
 void ChatServer::broadcastMessage(Socket* clientSocket, ChatMessage* message){
 
-    std::unique_ptr<Socket> client(clientSocket);
-    for(int i = 0; i < clients.size; ++i){
-        if(client != clients[i])   
-            socket.send(*message, *clients[i]);
+    for(int i = 0; i < clients.size(); ++i){
+        if(*clientSocket == *clients[i].get()) continue;
+        socket.send(*message, *clients[i]);  
     }
 }
 void ChatServer::do_messages()
@@ -74,17 +84,20 @@ void ChatServer::do_messages()
          * crear un unique_ptr con el objeto socket recibido y usar std::move
          * para añadirlo al vector
          */
-        ChatMessage message;
+        ChatMessage* message = new ChatMessage();
         Socket* clientSocket;
 
-        socket.recv(message, clientSocket);
+        int error = socket.recv(*message, clientSocket);
+        if(error == -1){
+            std::cout << "Error en do_message\n";
+        }
 
-        switch (message.type)
+        switch (message->type)
         {
-            case ChatMessage::LOGIN:    addClient(clientSocket);                    break;
-            case ChatMessage::LOGOUT:   removeClient(clientSocket);                 break;
-            case ChatMessage::MESSAGE:  broadcastMessage(clientSocket, &message);   break;
-            default:                                                                break;
+            case ChatMessage::LOGIN:    addClient(clientSocket, message);                    break;
+            case ChatMessage::LOGOUT:   removeClient(clientSocket, message);                 break;
+            case ChatMessage::MESSAGE:  broadcastMessage(clientSocket, message);             break;      
+            default:                                                                         break;
         }
     }
 }

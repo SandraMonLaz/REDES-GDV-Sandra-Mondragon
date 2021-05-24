@@ -5,7 +5,7 @@ OBJ = Socket.o Chat.o
 LIBS=-lpthread
 
 %.o: %.cc $(DEPS)
-	$(CC) -g -c -o $@ $< $(CFLAGS)
+	$(CC) -std=c++11 -g -c -o $@ $< $(CFLAGS)
 
 all: cs cc
 
